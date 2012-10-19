@@ -6,7 +6,7 @@ LIBRARIES=xml-light
 SYNTAX=comparelib sexplib
 
 MODULES=\
-  simple_xml \
+  paperless \
   main \
 
 B=
