@@ -6,6 +6,7 @@ LIBRARIES=xml-light
 SYNTAX=comparelib sexplib
 
 MODULES=\
+  simple_xml \
   main \
 
 B=
