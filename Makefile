@@ -1,8 +1,8 @@
 ### PARAMETERS #####################################################
 
 PACKAGES=core
-INCLUDES=
-LIBRARIES=
+INCLUDES=-I ~/.opam/system/lib/xml-light
+LIBRARIES=xml-light
 SYNTAX=comparelib sexplib
 
 MODULES=\

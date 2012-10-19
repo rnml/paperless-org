@@ -3,3 +3,4 @@ syntax: glob
 *.o
 *.exe
 *.cmx
+*.cmi
