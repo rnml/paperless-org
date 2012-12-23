@@ -5,7 +5,17 @@ type xml = Xml.xml =
   | PCData of string
 with sexp
 
-module Xml = struct
+module type Xml_conv = sig
+  type t with sexp
+  val of_xml : xml -> t
+  val to_xml : t -> xml
+end
+
+module Xml : sig
+  type t = xml
+  include Xml_conv with type t := t
+  val load : string -> t
+end = struct
 
   type t = xml with sexp
 
@@ -17,12 +27,6 @@ module Xml = struct
   let to_xml = Fn.id
 end
 
-module type Xml_conv = sig
-  type t
-  val of_xml : xml -> t
-  val to_xml : t -> xml
-end
-
 let xml_conv_fail name xml =
   Error.raise
     (Error.create (sprintf "bad %s" name) xml Xml.sexp_of_t)
@@ -32,7 +36,10 @@ let xmls_conv_fail name xmls =
     (Error.create (sprintf "bad %s" name) xmls
       (List.sexp_of_t Xml.sexp_of_t))
 
-module Pstring = struct
+module Pstring : sig
+  type t = string
+  include Xml_conv with type t := t
+end = struct
   type t = string with sexp
   let to_xml x = PCData x
   let of_xml = function
@@ -40,7 +47,10 @@ module Pstring = struct
     | xml -> xml_conv_fail "pstring" xml
 end
 
-module Pbool = struct
+module Pbool : sig
+  type t = bool
+  include Xml_conv with type t := t
+end = struct
   type t = bool with sexp
   let to_xml t = PCData (if t then "YES" else "NO")
   let of_xml = function
@@ -49,7 +59,10 @@ module Pbool = struct
     | xml -> xml_conv_fail "Pbool" xml
 end
 
-module Pint = struct
+module Pint : sig
+  type t = int
+  include Xml_conv with type t := t
+end = struct
   type t = int with sexp
   let to_xml t = PCData (Int.to_string t)
   let of_xml = function
@@ -68,7 +81,16 @@ let option_of_xml name of_xml = function
   | [x] -> Some (of_xml x)
   | xmls -> xmls_conv_fail name xmls
 
-module Item = struct
+module Item : sig
+  type t = {
+    name : string;
+    note : string option;
+    read_only : bool;
+    completed : bool;
+    date_completed : string option;
+  }
+  include Xml_conv with type t := t
+end = struct
   type t = {
     name : string;
     note : string option;
@@ -112,7 +134,18 @@ module Item = struct
     | xml -> xml_conv_fail "Item.t" xml
 end
 
-module Plist = struct
+module Plist : sig
+  type t = {
+    name : string;
+    icon_name : string;
+    is_checklist : bool;
+    items_to_top : bool;
+    include_in_badge_count : bool;
+    list_display_order : int;
+    items : Item.t list;
+  }
+  include Xml_conv with type t := t
+end = struct
   type t = {
     name : string;
     icon_name : string;
