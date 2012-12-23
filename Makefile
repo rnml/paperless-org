@@ -7,6 +7,7 @@ SYNTAX=comparelib sexplib
 
 MODULES=\
   paperless \
+  org \
   main \
 
 B=

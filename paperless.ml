@@ -288,7 +288,7 @@ let add t plist =
 
 let create plists =
   let open Result.Monad_infix in
-  let t = Hq.create () in
+  let t =Hq.create () in
   List.iter plists ~f:(fun plist -> add t plist);
   t
 
