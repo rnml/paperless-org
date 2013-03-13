@@ -1,9 +1,16 @@
 open Core.Std
 
-  (*
-type t = node list
- and node = Node of string * t
+type t = {
+  note : string option;
+  elts : elt list;
+}
+
+and elt = {
+  name : string;
+  tags : string list;
+  properties : string String.Map.t;
+  data : t;
+}
 with sexp
 
-val of_string : string -> t
-  *)
+include Stringable with type t := t
