@@ -11,7 +11,4 @@ let load path =
 
 let save t path =
   Out_channel.with_file path ~f:(fun cout ->
-    Out_channel.print_string cout (Xml.to_string_fmt t)
-
-let of_xml = Fn.id
-let to_xml = Fn.id
+    Out_channel.output_string cout (Xml.to_string_fmt t))

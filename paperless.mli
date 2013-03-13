@@ -24,7 +24,17 @@ end
 
 type t with sexp
 
-val load : string -> t
+module Xml : sig
+  val load : string -> t
+  (* val save : t -> string -> unit *)
+end
+
+(*
+module Org : sig
+  val load : string -> t
+  val save : t -> string -> unit
+end
+*)
 
 val create : List.t list -> t
 

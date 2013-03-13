@@ -1,13 +1,9 @@
 open Core.Std
 
-type t =
+type t = Xml.xml =
   | Element of (string * (string * string) list * t list)
   | PCData of string
 with sexp
 
 val load : string -> t
-
 val save : t -> string -> unit
-
-val of_xml : t -> t
-val to_xml : t -> t

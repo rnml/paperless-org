@@ -11,17 +11,13 @@ module type Xml_conv = sig
   val to_xml : t -> xml
 end
 
-module Xml : sig
+module Simple_xml : sig
   type t = xml
   include Xml_conv with type t := t
   val load : string -> t
 end = struct
 
-  type t = xml with sexp
-
-  let load path =
-    let module Parser = XmlParser in
-    Parser.parse (Parser.make ()) (Parser.SFile path)
+  include Simple_xml
 
   let of_xml = Fn.id
   let to_xml = Fn.id
@@ -29,12 +25,12 @@ end
 
 let xml_conv_fail name xml =
   Error.raise
-    (Error.create (sprintf "bad %s" name) xml Xml.sexp_of_t)
+    (Error.create (sprintf "bad %s" name) xml Simple_xml.sexp_of_t)
 
 let xmls_conv_fail name xmls =
   Error.raise
     (Error.create (sprintf "bad %s" name) xmls
-      (List.sexp_of_t Xml.sexp_of_t))
+      (List.sexp_of_t Simple_xml.sexp_of_t))
 
 module Pstring : sig
   type t = string
@@ -93,10 +89,10 @@ module Item : sig
 end = struct
   type t = {
     name : string;
-    note : string option;
-    read_only : bool;
-    completed : bool;
-    date_completed : string option;
+    note : string sexp_option;
+    read_only : sexp_bool;
+    completed : sexp_bool;
+    date_completed : string sexp_option;
   } with sexp
 
   let to_xml t =
@@ -149,9 +145,9 @@ end = struct
   type t = {
     name : string;
     icon_name : string;
-    is_checklist : bool;
-    items_to_top : bool;
-    include_in_badge_count : bool;
+    is_checklist : sexp_bool;
+    items_to_top : sexp_bool;
+    include_in_badge_count : sexp_bool;
     list_display_order : int;
     items : Item.t list;
   } with sexp
@@ -295,8 +291,10 @@ let create plists =
 let load dir =
   let index = Index.load (dir ^ "/index.plist") in
   List.map index ~f:(fun file ->
-    sprintf "%s/%s.xml" dir file |! Xml.load |! Plist.of_xml)
+    sprintf "%s/%s.xml" dir file |! Simple_xml.load |! Plist.of_xml)
   |! create
+
+let index t = List.map (Hq.to_list t) ~f:(fun plist -> plist.Plist.name)
 
 let iter = Hq.iter
 let fold = Hq.fold
@@ -305,3 +303,7 @@ let sexp_of_t t = List.sexp_of_t Plist.sexp_of_t (Hq.to_list t)
 let t_of_sexp s = create (List.t_of_sexp Plist.t_of_sexp s)
 
 module List = Plist
+
+module Xml = struct
+  let load = load
+end
