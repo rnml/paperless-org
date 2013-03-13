@@ -7,6 +7,7 @@ SYNTAX=comparelib sexplib
 
 MODULES=\
   simple_xml \
+  text_block \
   paperless \
   org \
   main \
