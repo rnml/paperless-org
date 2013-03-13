@@ -7,7 +7,7 @@ with sexp
 
 val load : string -> t
 
-(* val save : string -> t -> unit *)
+val save : t -> string -> unit
 
 val of_xml : t -> t
 val to_xml : t -> t
