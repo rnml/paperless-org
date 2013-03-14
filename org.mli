@@ -5,3 +5,6 @@ and elt = {name : string; tags : string list; properties : string String.Map.t; 
 with sexp
 
 include Stringable with type t := t
+
+val load : string -> t
+val save : t -> string -> unit
