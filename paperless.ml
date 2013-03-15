@@ -15,6 +15,7 @@ module Simple_xml : sig
   type t = xml
   include Xml_conv with type t := t
   val load : string -> t
+  val save : t -> string -> unit
 end = struct
 
   include Simple_xml
@@ -139,7 +140,7 @@ module Plist : sig
     include_in_badge_count : bool;
     list_display_order : int;
     items : Item.t list;
-  }
+  } with fields
   include Xml_conv with type t := t
 end = struct
   type t = {
@@ -150,7 +151,7 @@ end = struct
     include_in_badge_count : sexp_bool;
     list_display_order : int;
     items : Item.t list;
-  } with sexp
+  } with sexp, fields
 
   let of_xml = function
     | Element ("list", [], (
@@ -207,7 +208,11 @@ end = struct
     ))
 end
 
-module Index = struct
+module Index : sig
+  type t = string list
+  val load : string -> t
+  val save : t -> string -> unit
+end = struct
 
   let prelude = "\
 <?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -252,8 +257,8 @@ module Index = struct
             | Some line -> line
           )
 
-  let save path t =
-    Out_channel.with_file path (fun cout ->
+  let save t path =
+    Out_channel.with_file path ~f:(fun cout ->
       Out_channel.output_string cout prelude;
       Out_channel.newline cout;
       List.iter t ~f:(fun name ->
@@ -294,7 +299,13 @@ let load dir =
     sprintf "%s/%s.xml" dir file |! Simple_xml.load |! Plist.of_xml)
   |! create
 
-let index t = List.map (Hq.to_list t) ~f:(fun plist -> plist.Plist.name)
+let index t = List.map ~f:Plist.name (Hq.to_list t)
+
+let save t dir =
+  Index.save (index t) (dir ^ "/index.plist");
+  Hq.iteri t ~f:(fun ~key:name ~data:plist ->
+    let path = sprintf "%s/%s.xml" dir name in
+    Simple_xml.save (Plist.to_xml plist) path)
 
 let iter = Hq.iter
 let fold = Hq.fold
@@ -306,4 +317,5 @@ module List = Plist
 
 module Xml = struct
   let load = load
+  let save = save
 end

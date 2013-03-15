@@ -16,7 +16,7 @@ let main () =
   |! print_endline
 
 let main () =
-  Org.load "yo.org"
+  Org.load "foo.org"
   (* |! Org.sexp_of_t |! Sexp.to_string_hum *)
   |! Org.to_string
   |! print_string

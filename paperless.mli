@@ -26,7 +26,7 @@ type t with sexp
 
 module Xml : sig
   val load : string -> t
-  (* val save : t -> string -> unit *)
+  val save : t -> string -> unit
 end
 
 (*

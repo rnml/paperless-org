@@ -3,7 +3,7 @@
 PACKAGES=core
 INCLUDES=-I ~/.opam/4.01.0dev+short-paths/lib/xml-light
 LIBRARIES=xml-light
-SYNTAX=comparelib sexplib
+SYNTAX=comparelib sexplib fieldslib
 
 MODULES=\
   simple_xml \
