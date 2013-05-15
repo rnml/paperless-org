@@ -1,8 +1,15 @@
 open Core.Std
 
-type t = {note : string option; elts : elt list}
-and elt = {name : string; tags : string list; properties : string String.Map.t; data : t}
-with sexp
+type t = {
+  preamble : string list;
+  items : item list;
+}
+and item = {
+  header : string;
+  properties : (string, string) List.Assoc.t;
+  body : t;
+}
+  with sexp
 
 include Stringable with type t := t
 
