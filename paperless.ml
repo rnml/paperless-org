@@ -6,20 +6,18 @@ type xml = Xml.xml =
 with sexp
 
 module type Xml_conv = sig
-  type t with sexp
+  type t
   val of_xml : xml -> t
   val to_xml : t -> xml
 end
 
 module Simple_xml : sig
-  type t = xml
+  type t = xml with sexp
   include Xml_conv with type t := t
   val load : string -> t
   val save : t -> string -> unit
 end = struct
-
   include Simple_xml
-
   let of_xml = Fn.id
   let to_xml = Fn.id
 end
@@ -34,7 +32,7 @@ let xmls_conv_fail name xmls =
       (List.sexp_of_t Simple_xml.sexp_of_t))
 
 module Pstring : sig
-  type t = string
+  type t = string with sexp
   include Xml_conv with type t := t
 end = struct
   type t = string with sexp
@@ -45,7 +43,7 @@ end = struct
 end
 
 module Pbool : sig
-  type t = bool
+  type t = bool with sexp
   include Xml_conv with type t := t
 end = struct
   type t = bool with sexp
@@ -57,7 +55,7 @@ end = struct
 end
 
 module Pint : sig
-  type t = int
+  type t = int with sexp
   include Xml_conv with type t := t
 end = struct
   type t = int with sexp
@@ -86,6 +84,7 @@ module Item : sig
     completed : bool;
     date_completed : string option;
   }
+  with sexp
   include Xml_conv with type t := t
 end = struct
   type t = {
@@ -112,23 +111,50 @@ end = struct
       Element ("dateCompleted", [], date_completed);
     ])
 
-  let of_xml = function
-    | Element ("item", [], [
-        Element ("itemName", [], [name]);
-        Element ("itemNote", [], note);
-        Element ("itemReadOnly", [], [read_only]);
-        Element ("itemCompleted", [], [completed]);
-        Element ("dateCompleted", [], date_completed);
-      ]) -> {
-        name = Pstring.of_xml name;
-        note = option_of_xml "Item.note" Pstring.of_xml note;
-        read_only = Pbool.of_xml read_only;
-        completed = Pbool.of_xml completed;
-        date_completed =
-          option_of_xml "Item.date_completed"
-            Pstring.of_xml date_completed;
-      }
-    | xml -> xml_conv_fail "Item.t" xml
+  let of_xml xml =
+    let fail () = xml_conv_fail "Item.t" xml in
+    match xml with
+    | Element ("item", [], elts) ->
+      begin
+        let alist =
+          List.filter_map elts ~f:(function
+          | Element (key, [], value) -> Some (key, value)
+          | _ -> None)
+        in
+        if List.length alist = List.length elts then
+          let result =
+          match String.Map.of_alist alist with
+          | `Duplicate_key _ -> None
+          | `Ok elts ->
+            let open Option.Monad_infix in
+            let only_one = function [x] -> Some x | _ -> None in
+            Map.find elts "dateCompleted"
+            >>= fun date_completed ->
+            (Map.find elts "itemName" >>= only_one)
+            >>= fun name ->
+            Map.find elts "itemNote"
+            >>= fun note ->
+            (Map.find elts "itemReadOnly" >>= only_one)
+            >>= fun read_only ->
+            (Map.find elts "itemCompleted" >>= only_one)
+            >>= fun completed ->
+            Some {
+              name = Pstring.of_xml name;
+              note = option_of_xml "Item.note" Pstring.of_xml note;
+              read_only = Pbool.of_xml read_only;
+              completed = Pbool.of_xml completed;
+              date_completed =
+                option_of_xml "Item.date_completed"
+                  Pstring.of_xml date_completed;
+            }
+              in
+          match result with
+          | None -> fail ()
+          | Some x -> x
+        else
+          fail ()
+      end
+    | _ -> fail ()
 end
 
 module Plist : sig
@@ -140,7 +166,7 @@ module Plist : sig
     include_in_badge_count : bool;
     list_display_order : int;
     items : Item.t list;
-  } with fields
+  } with fields, sexp
   include Xml_conv with type t := t
 end = struct
   type t = {
@@ -152,6 +178,11 @@ end = struct
     list_display_order : int;
     items : Item.t list;
   } with sexp, fields
+
+  let prelude = "\
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<?xml-stylesheet type=\"text/css\" \
+href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
 
   let of_xml = function
     | Element ("list", [], (
@@ -289,11 +320,11 @@ let add t plist =
 
 let create plists =
   let open Result.Monad_infix in
-  let t =Hq.create () in
+  let t = Hq.create () in
   List.iter plists ~f:(fun plist -> add t plist);
   t
 
-let load dir =
+let xml_load dir =
   let index = Index.load (dir ^ "/index.plist") in
   List.map index ~f:(fun file ->
     sprintf "%s/%s.xml" dir file |! Simple_xml.load |! Plist.of_xml)
@@ -301,7 +332,7 @@ let load dir =
 
 let index t = List.map ~f:Plist.name (Hq.to_list t)
 
-let save t dir =
+let xml_save t dir =
   Index.save (index t) (dir ^ "/index.plist");
   Hq.iteri t ~f:(fun ~key:name ~data:plist ->
     let path = sprintf "%s/%s.xml" dir name in
@@ -313,9 +344,25 @@ let fold = Hq.fold
 let sexp_of_t t = List.sexp_of_t Plist.sexp_of_t (Hq.to_list t)
 let t_of_sexp s = create (List.t_of_sexp Plist.t_of_sexp s)
 
+let org_conv_fail name org =
+  Error.raise
+    (Error.create (sprintf "bad %s" name) org Org.sexp_of_t)
+
+let org_load file =
+  match Org.load file with
+  | {Org.preamble = []; items} ->
+  | _ -> org_conv
+  org.Org.items
+
 module List = Plist
 
 module Xml = struct
-  let load = load
-  let save = save
+  let load = xml_load
+  let save = xml_save
 end
+
+module Org = struct
+  let load = org_load
+  (* let save = org_save *)
+end
+
