@@ -7,9 +7,8 @@ SYNTAX=comparelib sexplib fieldslib
 
 MODULES=\
   simple_xml \
-  text_block \
-  paperless \
   org \
+  paperless \
   main \
 
 B=

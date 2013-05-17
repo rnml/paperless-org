@@ -86,6 +86,7 @@ module Item : sig
   }
   with sexp
   include Xml_conv with type t := t
+  val to_org : t -> Org.item
 end = struct
   type t = {
     name : string;
@@ -123,31 +124,31 @@ end = struct
         in
         if List.length alist = List.length elts then
           let result =
-          match String.Map.of_alist alist with
-          | `Duplicate_key _ -> None
-          | `Ok elts ->
-            let open Option.Monad_infix in
-            let only_one = function [x] -> Some x | _ -> None in
-            Map.find elts "dateCompleted"
-            >>= fun date_completed ->
-            (Map.find elts "itemName" >>= only_one)
-            >>= fun name ->
-            Map.find elts "itemNote"
-            >>= fun note ->
-            (Map.find elts "itemReadOnly" >>= only_one)
-            >>= fun read_only ->
-            (Map.find elts "itemCompleted" >>= only_one)
-            >>= fun completed ->
-            Some {
-              name = Pstring.of_xml name;
-              note = option_of_xml "Item.note" Pstring.of_xml note;
-              read_only = Pbool.of_xml read_only;
-              completed = Pbool.of_xml completed;
-              date_completed =
-                option_of_xml "Item.date_completed"
-                  Pstring.of_xml date_completed;
-            }
-              in
+            match String.Map.of_alist alist with
+            | `Duplicate_key _ -> None
+            | `Ok elts ->
+              let open Option.Monad_infix in
+              let only_one = function [x] -> Some x | _ -> None in
+              Map.find elts "dateCompleted"
+              >>= fun date_completed ->
+              (Map.find elts "itemName" >>= only_one)
+              >>= fun name ->
+              Map.find elts "itemNote"
+              >>= fun note ->
+              (Map.find elts "itemReadOnly" >>= only_one)
+              >>= fun read_only ->
+              (Map.find elts "itemCompleted" >>= only_one)
+              >>= fun completed ->
+              Some {
+                name = Pstring.of_xml name;
+                note = option_of_xml "Item.note" Pstring.of_xml note;
+                read_only = Pbool.of_xml read_only;
+                completed = Pbool.of_xml completed;
+                date_completed =
+                  option_of_xml "Item.date_completed"
+                    Pstring.of_xml date_completed;
+              }
+          in
           match result with
           | None -> fail ()
           | Some x -> x
@@ -155,6 +156,25 @@ end = struct
           fail ()
       end
     | _ -> fail ()
+
+  let to_org {name; note; read_only; completed; date_completed} =
+    let header = if completed then "DONE " ^ name else name in
+    { Org.
+      header;
+      properties =
+        List.filter_opt [
+          Some ("read_only", Bool.to_string read_only);
+          Option.map date_completed ~f:(fun date ->
+            ("date_completed", date));
+        ];
+      body =
+        { Org.
+          preamble =
+            Option.to_list note
+            |! List.concat_map ~f:(String.split ~on:'\n');
+          items = []
+        };
+    }
 end
 
 module Plist : sig
@@ -168,6 +188,7 @@ module Plist : sig
     items : Item.t list;
   } with fields, sexp
   include Xml_conv with type t := t
+  val to_org : t -> Org.item
 end = struct
   type t = {
     name : string;
@@ -186,33 +207,33 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
 
   let of_xml = function
     | Element ("list", [], (
+      Element
+        ("listName", [], [name]) ::
         Element
-          ("listName", [], [name]) ::
+        ("listIconName", [], [icon_name]) ::
         Element
-          ("listIconName", [], [icon_name]) ::
+        ("isChecklist", [], [is_checklist]) ::
         Element
-          ("isChecklist", [], [is_checklist]) ::
+        ("itemsToTop", [], [items_to_top]) ::
         Element
-          ("itemsToTop", [], [items_to_top]) ::
+        ("includeInBadgeCount", [], [include_in_badge_count]) ::
         Element
-          ("includeInBadgeCount", [], [include_in_badge_count]) ::
-        Element
-          ("listDisplayOrder", [], [list_display_order]) ::
+        ("listDisplayOrder", [], [list_display_order]) ::
         items
-      )) -> {
-        name = Pstring.of_xml name;
-        icon_name = Pstring.of_xml icon_name;
-        is_checklist = Pbool.of_xml is_checklist;
-        items_to_top = Pbool.of_xml items_to_top;
-        include_in_badge_count =
-          Pbool.of_xml include_in_badge_count;
-        list_display_order = Pint.of_xml list_display_order;
-        items = List.map ~f:Item.of_xml items;
-      }
+    )) -> {
+      name = Pstring.of_xml name;
+      icon_name = Pstring.of_xml icon_name;
+      is_checklist = Pbool.of_xml is_checklist;
+      items_to_top = Pbool.of_xml items_to_top;
+      include_in_badge_count =
+        Pbool.of_xml include_in_badge_count;
+      list_display_order = Pint.of_xml list_display_order;
+      items = List.map ~f:Item.of_xml items;
+    }
     | xml -> xml_conv_fail "List.t" xml
 
   let to_xml {name; icon_name; is_checklist; items_to_top;
-      include_in_badge_count; list_display_order; items} =
+              include_in_badge_count; list_display_order; items} =
     let name = Pstring.to_xml name in
     let icon_name = Pstring.to_xml icon_name in
     let is_checklist = Pbool.to_xml is_checklist in
@@ -225,18 +246,36 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
     Element ("list", [], (
       Element
         ("listName", [], [name]) ::
-      Element
+        Element
         ("listIconName", [], [icon_name]) ::
-      Element
+        Element
         ("isChecklist", [], [is_checklist]) ::
-      Element
+        Element
         ("itemsToTop", [], [items_to_top]) ::
-      Element
+        Element
         ("includeInBadgeCount", [], [include_in_badge_count]) ::
-      Element
+        Element
         ("listDisplayOrder", [], [list_display_order]) ::
-      items
+        items
     ))
+
+  let to_org { name; icon_name; is_checklist; items_to_top;
+               include_in_badge_count; list_display_order; items} =
+    ignore list_display_order; (* implied *)
+    { Org.
+      header = name;
+      properties = [
+        ("icon_name", icon_name);
+        ("is_checklist", Bool.to_string is_checklist);
+        ("items_to_top", Bool.to_string items_to_top);
+        ("include_in_badge_count", Bool.to_string include_in_badge_count);
+      ];
+      body =
+        { Org.
+          preamble = [];
+          items = List.map items ~f:Item.to_org;
+        };
+    }
 end
 
 module Index : sig
@@ -348,11 +387,14 @@ let org_conv_fail name org =
   Error.raise
     (Error.create (sprintf "bad %s" name) org Org.sexp_of_t)
 
-let org_load file =
-  match Org.load file with
-  | {Org.preamble = []; items} ->
-  | _ -> org_conv
-  org.Org.items
+let org_save t file =
+  let org =
+    { Org.
+      preamble = [];
+      items = List.map (Hq.to_list t) ~f:Plist.to_org;
+    }
+  in
+  Org.save org file
 
 module List = Plist
 
@@ -362,7 +404,7 @@ module Xml = struct
 end
 
 module Org = struct
-  let load = org_load
-  (* let save = org_save *)
+  (* let load = org_load *)
+  let save = org_save
 end
 

@@ -11,6 +11,6 @@ let main () =
 
 let main () =
   let p = Paperless.Xml.load dir in
-  Paperless.Xml.save p dir
+  Paperless.Org.save p "/tmp/paperless.org"
 
 let () = Exn.handle_uncaught ~exit:true main

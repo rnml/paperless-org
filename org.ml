@@ -49,7 +49,7 @@ let to_lines t =
     @ List.concat_map items ~f:(fun {header; properties; body} ->
       Line.to_string (Level.Num n, header) ::
         List.map properties ~f:(fun (key, value) ->
-          String.make (n + 1) ' ' ^ key ^ " " ^ value)
+          String.make (n + 1) ' ' ^ ":" ^ key ^ ": " ^ value)
         @ aux (n + 1) body)
   in
   aux 1 t

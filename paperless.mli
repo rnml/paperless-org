@@ -30,8 +30,8 @@ module Xml : sig
 end
 
 module Org : sig
-  val load : string -> t
-  (* val save : t -> string -> unit *)
+  (* val load : string -> t *)
+  val save : t -> string -> unit
 end
 
 val create : List.t list -> t
