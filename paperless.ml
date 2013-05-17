@@ -158,9 +158,9 @@ end = struct
     | _ -> fail ()
 
   let to_org {name; note; read_only; completed; date_completed} =
-    let header = if completed then "DONE " ^ name else name in
     { Org.
-      header;
+      header = name;
+      completed;
       properties =
         List.filter_opt [
           Some ("read_only", Bool.to_string read_only);
@@ -264,6 +264,7 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
     ignore list_display_order; (* implied *)
     { Org.
       header = name;
+      completed = false;
       properties = [
         ("icon_name", icon_name);
         ("is_checklist", Bool.to_string is_checklist);

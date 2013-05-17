@@ -5,6 +5,7 @@ type t = {
   items : item list;
 }
 and item = {
+  completed : bool;
   header : string;
   properties : (string, string) List.Assoc.t;
   body : t;

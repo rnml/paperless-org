@@ -35,6 +35,7 @@ type t = {
   items : item list;
 }
 and item = {
+  completed : bool;
   header : string;
   properties : (string, string) List.Assoc.t;
   body : t;
@@ -46,10 +47,14 @@ let to_lines t =
     List.map preamble ~f:(fun line ->
       let (level, text) = Line.of_string line in
       Line.to_string (Level.add level n, text))
-    @ List.concat_map items ~f:(fun {header; properties; body} ->
-      Line.to_string (Level.Num n, header) ::
-        List.map properties ~f:(fun (key, value) ->
-          String.make (n + 1) ' ' ^ ":" ^ key ^ ": " ^ value)
+    @ List.concat_map items
+      ~f:(fun {header; completed; properties; body} ->
+        let header =
+          if completed then "DONE " ^ header else header
+        in
+        Line.to_string (Level.Num n, header) ::
+          List.map properties ~f:(fun (key, value) ->
+            String.make (n + 1) ' ' ^ ":" ^ key ^ ": " ^ value)
         @ aux (n + 1) body)
   in
   aux 1 t
@@ -97,7 +102,12 @@ let of_lines ls =
           in
           (properties, {body with preamble})
         in
-        {header; properties; body}
+        let (completed, header) =
+          match String.chop_prefix header ~prefix:"DONE " with
+          | None -> (false, header)
+          | Some header -> (true, header)
+        in
+        {completed; header; properties; body}
       | _ -> assert false
     in
     match groups with
