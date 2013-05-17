@@ -37,6 +37,7 @@ type t = {
 and item = {
   completed : bool;
   header : string;
+  tags : string list;
   properties : (string, string) List.Assoc.t;
   body : t;
 }
@@ -48,9 +49,16 @@ let to_lines t =
       let (level, text) = Line.of_string line in
       Line.to_string (Level.add level n, text))
     @ List.concat_map items
-      ~f:(fun {header; completed; properties; body} ->
+      ~f:(fun {completed; header; tags; properties; body} ->
         let header =
           if completed then "DONE " ^ header else header
+        in
+        let header =
+          if List.is_empty tags then header else
+            header
+            ^ "        :"
+            ^ String.concat tags ~sep:":"
+            ^ ":"
         in
         Line.to_string (Level.Num n, header) ::
           List.map properties ~f:(fun (key, value) ->
@@ -107,7 +115,27 @@ let of_lines ls =
           | None -> (false, header)
           | Some header -> (true, header)
         in
-        {completed; header; properties; body}
+        let (header, tags) =
+          let rec aux header tags =
+            match String.chop_suffix ~suffix:":" header with
+            | None -> (header, tags)
+            | Some rest ->
+              match String.rsplit2 rest ~on:':' with
+              | None -> (header, tags)
+              | Some (rest, tag) ->
+                if
+                  String.exists tag ~f:(function
+                  | ' ' | '-' -> true
+                  | _ -> false)
+                then
+                  (header, tags)
+                else
+                  aux rest (tag :: tags)
+          in
+          aux header []
+        in
+        let header = String.strip header in
+        {completed; header; tags; properties; body}
       | _ -> assert false
     in
     match groups with

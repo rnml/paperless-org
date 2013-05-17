@@ -7,6 +7,7 @@ type t = {
 and item = {
   completed : bool;
   header : string;
+  tags : string list;
   properties : (string, string) List.Assoc.t;
   body : t;
 }

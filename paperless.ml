@@ -158,12 +158,17 @@ end = struct
     | _ -> fail ()
 
   let to_org {name; note; read_only; completed; date_completed} =
+    let tags =
+      List.filter_opt [
+        if read_only then Some "read_only" else None;
+      ]
+    in
     { Org.
       header = name;
       completed;
+      tags;
       properties =
         List.filter_opt [
-          Some ("read_only", Bool.to_string read_only);
           Option.map date_completed ~f:(fun date ->
             ("date_completed", date));
         ];
@@ -262,14 +267,19 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
   let to_org { name; icon_name; is_checklist; items_to_top;
                include_in_badge_count; list_display_order; items} =
     ignore list_display_order; (* implied *)
+    let tags =
+      List.filter_opt [
+        if is_checklist then Some "checklist" else None;
+        if include_in_badge_count then Some "count" else None;
+      ]
+    in
     { Org.
       header = name;
       completed = false;
+      tags;
       properties = [
         ("icon_name", icon_name);
-        ("is_checklist", Bool.to_string is_checklist);
         ("items_to_top", Bool.to_string items_to_top);
-        ("include_in_badge_count", Bool.to_string include_in_badge_count);
       ];
       body =
         { Org.
