@@ -156,3 +156,5 @@ let to_string t = to_lines t |! String.concat ~sep:"\n"
 
 let load file = In_channel.read_lines file |! of_lines
 let save t file = to_lines t |! Out_channel.write_lines file
+
+let item_to_lines item = to_lines {preamble = []; items = [item]}

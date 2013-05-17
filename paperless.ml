@@ -87,6 +87,7 @@ module Item : sig
   with sexp
   include Xml_conv with type t := t
   val to_org : t -> Org.item
+  val of_org : Org.item -> t
 end = struct
   type t = {
     name : string;
@@ -180,6 +181,40 @@ end = struct
           items = []
         };
     }
+
+  let of_org {Org.header; completed; tags; properties; body} =
+    let name = header in
+    let (known_tags, other_tags) =
+      List.partition_map tags ~f:(fun tag ->
+        match tag with
+        | "read_only" -> `Fst tag
+        | _ -> `Snd tag)
+    in
+    let name =
+      if List.is_empty other_tags then name else
+        name ^ "      :" ^ String.concat ~sep:":" other_tags ^ ":"
+    in
+    let read_only = List.mem known_tags "read_only" in
+    let (known_properties, other_properties) =
+      List.partition_map properties ~f:(fun (key, value) ->
+        match key with
+        | "completed" -> `Fst (key, value)
+        | _ -> `Snd (key, value)
+      )
+    in
+    let date_completed = List.Assoc.find known_properties "completed" in
+    let note =
+      (List.map other_properties ~f:(fun (key, value) ->
+        ":" ^ key ^ ": " ^ value)
+       @ body.Org.preamble
+       @ List.concat_map body.Org.items ~f:Org.item_to_lines
+      )
+    in
+    let note =
+      if List.is_empty note then None else Some (String.concat ~sep:"\n" note)
+    in
+    {name; note; read_only; completed; date_completed}
+
 end
 
 module Plist : sig
@@ -194,6 +229,7 @@ module Plist : sig
   } with fields, sexp
   include Xml_conv with type t := t
   val to_org : t -> Org.item
+  val of_org : Org.item -> t
 end = struct
   type t = {
     name : string;
@@ -287,6 +323,40 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
           items = List.map items ~f:Item.to_org;
         };
     }
+
+  let of_org {Org.header; completed = _; tags; properties; body} =
+    let name = header in
+    let (known_tags, other_tags) =
+      List.partition_map tags ~f:(fun tag ->
+        match tag with
+        | "checklist" | "count" -> `Fst tag
+        | _ -> `Snd tag)
+    in
+    let name =
+      if List.is_empty other_tags then name else
+        name ^ "      :" ^ String.concat ~sep:":" other_tags ^ ":"
+    in
+    let is_checklist = List.mem known_tags "checklist" in
+    let include_in_badge_count = List.mem known_tags "count" in
+    let (known_properties, other_properties) =
+      List.partition_map properties ~f:(fun (key, value) ->
+        match key with
+        | "icon_name" | "items_to_top" -> `Fst (key, value)
+        | _ -> `Snd (key, value)
+      )
+    in
+    ignore other_properties;
+    let items_to_top =
+      List.Assoc.find_exn known_properties "items_to_top"
+      |! Bool.of_string
+    in
+    let icon_name  =
+      List.Assoc.find_exn known_properties "icon_name"
+    in
+    let items = List.map body.Org.items ~f:Item.of_org in
+    { name; icon_name; is_checklist; items_to_top;
+      include_in_badge_count; list_display_order = 0; items}
+
 end
 
 module Index : sig
@@ -407,6 +477,10 @@ let org_save t file =
   in
   Org.save org file
 
+let org_load file =
+  let org = Org.load file in
+  create (List.map ~f:Plist.of_org org.Org.items)
+
 module List = Plist
 
 module Xml = struct
@@ -415,7 +489,7 @@ module Xml = struct
 end
 
 module Org = struct
-  (* let load = org_load *)
+  let load = org_load
   let save = org_save
 end
 

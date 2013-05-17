@@ -15,5 +15,7 @@ and item = {
 
 include Stringable with type t := t
 
+val item_to_lines : item -> string list
+
 val load : string -> t
 val save : t -> string -> unit
