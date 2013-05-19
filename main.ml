@@ -4,13 +4,36 @@ module X = Paperless
 
 let dir = "/home/nathanml/paperless-lists"
 
-let main () =
-  Org.load "foo.org"
-  |! Org.to_string
-  |! print_string
+let pull_command =
+  Command.basic ~summary:"pull from paperless lists to org file"
+    Command.Spec.(empty +> anon ("ORG-FILE" %: file))
+    (fun file () ->
+      let p = Paperless.Xml.load dir in
+      Paperless.Org.save p file)
 
-let main () =
-  let p = Paperless.Xml.load dir in
-  Paperless.Org.save p "/tmp/paperless.org"
+let push_command =
+  Command.basic ~summary:"push from org file to paperless lists"
+    Command.Spec.(empty +> anon ("ORG-FILE" %: file))
+    (fun file () ->
+      let p = Paperless.Org.load file in
+      Paperless.Xml.save p dir)
 
-let () = Exn.handle_uncaught ~exit:true main
+let parse_command =
+  Command.basic ~summary:"parse org file and render as a sexp"
+    Command.Spec.(empty +> anon ("ORG-FILE" %: file))
+    (fun file () ->
+      Org.load file
+      |! Org.sexp_of_t
+      |! Sexp.to_string_hum
+      |! print_endline)
+
+let command =
+  Command.group ~summary:"convert paperless lists between XML and Org-mode"
+    [
+      ("pull", pull_command);
+      ("push", push_command);
+      ("parse", parse_command);
+    ]
+
+let () =
+  Exn.handle_uncaught ~exit:true (fun () -> Command.run command)

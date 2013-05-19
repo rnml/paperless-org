@@ -86,7 +86,8 @@ let of_lines ls =
               |! List.filter ~f:(fun token ->
                 not (String.is_empty token))
             with
-            | [key; value] ->
+            | key :: value ->
+              let value = String.concat ~sep:" " value in
               let open Option.Monad_infix in
               String.chop_prefix key ~prefix:":"
               >>= fun key ->
@@ -116,11 +117,11 @@ let of_lines ls =
           | Some header -> (true, header)
         in
         let (header, tags) =
-          let rec aux header tags =
-            match String.chop_suffix ~suffix:":" header with
-            | None -> (header, tags)
-            | Some rest ->
-              match String.rsplit2 rest ~on:':' with
+          match String.chop_suffix ~suffix:":" header with
+          | None -> (header, [])
+          | Some header ->
+            let rec aux header tags =
+              match String.rsplit2 header ~on:':' with
               | None -> (header, tags)
               | Some (rest, tag) ->
                 if

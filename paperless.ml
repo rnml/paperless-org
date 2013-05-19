@@ -106,11 +106,11 @@ end = struct
       option_to_xml Pstring.to_xml t.date_completed
     in
     Element ("item", [], [
+      Element ("dateCompleted", [], date_completed);
       Element ("itemName", [], [name]);
       Element ("itemNote", [], note);
       Element ("itemReadOnly", [], [read_only]);
       Element ("itemCompleted", [], [completed]);
-      Element ("dateCompleted", [], date_completed);
     ])
 
   let of_xml xml =
@@ -171,7 +171,7 @@ end = struct
       properties =
         List.filter_opt [
           Option.map date_completed ~f:(fun date ->
-            ("date_completed", date));
+            ("completed", date));
         ];
       body =
         { Org.
@@ -324,7 +324,7 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
         };
     }
 
-  let of_org {Org.header; completed = _; tags; properties; body} =
+  let of_org ({Org.header; completed = _; tags; properties; body} as org) =
     let name = header in
     let (known_tags, other_tags) =
       List.partition_map tags ~f:(fun tag ->
@@ -347,8 +347,13 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
     in
     ignore other_properties;
     let items_to_top =
-      List.Assoc.find_exn known_properties "items_to_top"
-      |! Bool.of_string
+      match
+        List.Assoc.find known_properties "items_to_top"
+      with
+      | Some b -> Bool.of_string b
+      | None ->
+        failwiths "missing items_to_top" org
+          <:sexp_of< Org.item >>
     in
     let icon_name  =
       List.Assoc.find_exn known_properties "icon_name"
@@ -482,6 +487,11 @@ let org_load file =
   create (List.map ~f:Plist.of_org org.Org.items)
 
 module List = Plist
+
+module type Format = sig
+  val load : string -> t
+  val save : t -> string -> unit
+end
 
 module Xml = struct
   let load = xml_load

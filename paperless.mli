@@ -24,16 +24,14 @@ end
 
 type t with sexp
 
-module Xml : sig
-  val load : string -> t
-  val save : t -> string -> unit
-end
-
-module Org : sig
-  val load : string -> t
-  val save : t -> string -> unit
-end
-
 val create : List.t list -> t
-
 val iter : t -> f:(List.t -> unit) -> unit
+
+module type Format = sig
+  val load : string -> t
+  val save : t -> string -> unit
+end
+
+module Xml : Format
+module Org : Format
+
