@@ -2,7 +2,7 @@ open Core.Std
 
 module X = Paperless
 
-let dir = "/home/nathanml/paperless-lists"
+let dir = "/home/nathanml/paperless"
 
 let pull_command =
   Command.basic ~summary:"pull from paperless lists to org file"
@@ -27,12 +27,21 @@ let parse_command =
       |! Sexp.to_string_hum
       |! print_endline)
 
+let normalize_command =
+  Command.basic ~summary:"normalize names in paperless lists"
+    Command.Spec.(empty +> anon ("ORG-FILE" %: file))
+    (fun file () ->
+      let p = Paperless.Org.load file in
+      let p = Paperless.normalize p in
+      Paperless.Xml.save p dir)
+
 let command =
   Command.group ~summary:"convert paperless lists between XML and Org-mode"
     [
       ("pull", pull_command);
       ("push", push_command);
       ("parse", parse_command);
+      ("normalize", normalize_command);
     ]
 
 let () =

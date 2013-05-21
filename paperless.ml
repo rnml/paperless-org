@@ -230,6 +230,7 @@ module Plist : sig
   include Xml_conv with type t := t
   val to_org : t -> Org.item
   val of_org : Org.item -> t
+  val normalize : t -> t
 end = struct
   type t = {
     name : string;
@@ -362,6 +363,9 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
     { name; icon_name; is_checklist; items_to_top;
       include_in_badge_count; list_display_order = 0; items}
 
+  let normalize t =
+    let norm s = String.lowercase s |! String.tr ~target:'_' ~replacement:'-' in
+    {t with name = norm t.name}
 end
 
 module Index : sig
@@ -463,6 +467,15 @@ let xml_save t dir =
     let path = sprintf "%s/%s.xml" dir name in
     Simple_xml.save (Plist.to_xml plist) path)
 
+let xml_save new_t dir =
+  let old_t = xml_load dir in
+  let keys t = Hq.keys t |! String.Set.of_list in
+  let new_keys = keys new_t in
+  let old_keys = keys old_t in
+  xml_save new_t dir;
+  Set.iter (Set.diff old_keys new_keys) ~f:(fun name ->
+    Unix.unlink (dir ^/ name ^ ".xml"))
+
 let iter = Hq.iter
 let fold = Hq.fold
 
@@ -486,6 +499,11 @@ let org_load file =
   let org = Org.load file in
   create (List.map ~f:Plist.of_org org.Org.items)
 
+let normalize t =
+  Hq.to_list t
+  |! List.map ~f:Plist.normalize
+  |! create
+
 module List = Plist
 
 module type Format = sig
@@ -502,4 +520,3 @@ module Org = struct
   let load = org_load
   let save = org_save
 end
-

@@ -32,6 +32,8 @@ module type Format = sig
   val save : t -> string -> unit
 end
 
+val normalize : t -> t
+
 module Xml : Format
 module Org : Format
 
