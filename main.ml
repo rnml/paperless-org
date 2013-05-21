@@ -33,7 +33,7 @@ let normalize_command =
     (fun file () ->
       let p = Paperless.Org.load file in
       let p = Paperless.normalize p in
-      Paperless.Xml.save p dir)
+      Paperless.Org.save p file)
 
 let command =
   Command.group ~summary:"convert paperless lists between XML and Org-mode"
