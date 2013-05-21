@@ -1,8 +1,6 @@
 open Core.Std
 
-module X = Paperless
-
-let dir = "/home/nathanml/paperless"
+let dir = "/home/nathanml/paperless" (* clone of Dropbox subdirectory *)
 
 let pull_command =
   Command.basic ~summary:"pull from paperless lists to org file"
