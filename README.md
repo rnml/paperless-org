@@ -1,3 +1,4 @@
-small utility for synchronizing the
-[Paperless](http://crushapps.com/paperless/) iPhone app with an
-org-mode file via dropbox and a local hg repo.
+small utility for synchronizing one's
+[Paperless](http://crushapps.com/paperless/) lists with an
+[org-mode](http://orgmode.org) file via
+[dropbox](https://www.dropbox.dom) and a local hg repo.
