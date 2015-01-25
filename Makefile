@@ -1,11 +1,11 @@
 ### PARAMETERS #####################################################
 
-PACKAGES=core
-INCLUDES=-I ~/.opam/4.01.0dev+short-paths/lib/xml-light
-LIBRARIES=xml-light
+PACKAGES=core xml-light
+INCLUDES=
+LIBRARIES=
 SYNTAX=comparelib sexplib fieldslib
 
-MODULES=\
+MODULES= \
   simple_xml \
   org \
   paperless \
@@ -14,9 +14,7 @@ MODULES=\
 B=
 T=main.exe
 FOR_PACK_OPT=
-
 ### RULES ##########################################################
-
 
 SYNTAX_PACKAGES=$(addsuffix .syntax, $(SYNTAX))
 
@@ -29,12 +27,7 @@ ifdef SYNTAX
   endif
 endif
 
-OCAMLOPT_FLAGS=\
-  $(FIND_OPTS) \
-  -thread \
-  -linkpkg \
-  -w YSPUZF \
-  -warn-error YSPUZ
+OCAMLOPT_FLAGS=$(FIND_OPTS) -thread -linkpkg -w YSPUZF -warn-error YSPUZ
 
 OCAMLC=ocamlfind ocamlc $(INCLUDES)
 OCAMLOPT=ocamlfind ocamlopt $(INCLUDES)
@@ -99,5 +92,4 @@ clean:
 	rm -rf .depend *.o *.a *.cmi *.cmo *.cma *.cmx *.cmxa *.exe
 
 include .depend
-
 

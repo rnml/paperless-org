@@ -177,7 +177,7 @@ end = struct
         { Org.
           preamble =
             Option.to_list note
-            |! List.concat_map ~f:(String.split ~on:'\n');
+            |> List.concat_map ~f:(String.split ~on:'\n');
           items = []
         };
     }
@@ -364,7 +364,7 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
       include_in_badge_count; list_display_order = 0; items}
 
   let normalize t =
-    let norm s = String.lowercase s |! String.tr ~target:'_' ~replacement:'-' in
+    let norm s = String.lowercase s |> String.tr ~target:'_' ~replacement:'-' in
     {t with name = norm t.name}
 end
 
@@ -402,8 +402,8 @@ end = struct
           (String.suffix contents (String.length postlude)) ()
       | Some contents ->
         String.strip contents
-        |! String.split ~on:'\n'
-        |! List.map ~f:(fun line ->
+        |> String.split ~on:'\n'
+        |> List.map ~f:(fun line ->
           let line = String.strip line in
           match String.chop_prefix ~prefix:"<string>" line with
           | None ->
@@ -456,8 +456,8 @@ let create plists =
 let xml_load dir =
   let index = Index.load (dir ^ "/index.plist") in
   List.map index ~f:(fun file ->
-    sprintf "%s/%s.xml" dir file |! Simple_xml.load |! Plist.of_xml)
-  |! create
+    sprintf "%s/%s.xml" dir file |> Simple_xml.load |> Plist.of_xml)
+  |> create
 
 let index t = List.map ~f:Plist.name (Hq.to_list t)
 
@@ -469,7 +469,7 @@ let xml_save t dir =
 
 let xml_save new_t dir =
   let old_t = xml_load dir in
-  let keys t = Hq.keys t |! String.Set.of_list in
+  let keys t = Hq.keys t |> String.Set.of_list in
   let new_keys = keys new_t in
   let old_keys = keys old_t in
   xml_save new_t dir;
@@ -501,8 +501,8 @@ let org_load file =
 
 let normalize t =
   Hq.to_list t
-  |! List.map ~f:Plist.normalize
-  |! create
+  |> List.map ~f:Plist.normalize
+  |> create
 
 module List = Plist
 

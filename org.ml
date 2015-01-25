@@ -2,8 +2,8 @@ open Core.Std
 
 module Level = struct
   type t =
-  | Infinity
-  | Num of int (* > 0 *)
+    | Infinity
+    | Num of int (* > 0 *)
   with compare, sexp
   let equal t1 t2 = compare t1 t2 = 0
   let pred = function
@@ -40,8 +40,7 @@ and item = {
   tags : string list;
   properties : (string, string) List.Assoc.t;
   body : t;
-}
-  with sexp
+} with sexp
 
 let to_lines t =
   let rec aux n {preamble; items} =
@@ -49,21 +48,21 @@ let to_lines t =
       let (level, text) = Line.of_string line in
       Line.to_string (Level.add level n, text))
     @ List.concat_map items
-      ~f:(fun {completed; header; tags; properties; body} ->
-        let header =
-          if completed then "DONE " ^ header else header
-        in
-        let header =
-          if List.is_empty tags then header else
-            header
-            ^ "        :"
-            ^ String.concat tags ~sep:":"
-            ^ ":"
-        in
-        Line.to_string (Level.Num n, header) ::
+        ~f:(fun {completed; header; tags; properties; body} ->
+          let header =
+            if completed then "DONE " ^ header else header
+          in
+          let header =
+            if List.is_empty tags then header else
+              header
+              ^ "        :"
+              ^ String.concat tags ~sep:":"
+              ^ ":"
+          in
+          Line.to_string (Level.Num n, header) ::
           List.map properties ~f:(fun (key, value) ->
             String.make (n + 1) ' ' ^ ":" ^ key ^ ": " ^ value)
-        @ aux (n + 1) body)
+          @ aux (n + 1) body)
   in
   aux 1 t
 

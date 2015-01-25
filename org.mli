@@ -10,8 +10,7 @@ and item = {
   tags : string list;
   properties : (string, string) List.Assoc.t;
   body : t;
-}
-  with sexp
+} with sexp
 
 include Stringable with type t := t
 
