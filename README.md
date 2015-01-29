@@ -1,7 +1,4 @@
-Little utility for synchronizing one's
-[Paperless](http://crushapps.com/paperless/) lists on the iPhone with an
-[org-mode](http://orgmode.org) file via
-[Dropbox](https://www.dropbox.dom) and a local hg repo.
+Little utility for synchronizing one's [Paperless](http://crushapps.com/paperless/) lists on the iPhone/iPad with an [org-mode](http://orgmode.org) file via [Dropbox](https://www.dropbox.dom) and a local hg repo.
 
 Paperless is an excellent little app that helps me keep my life in order.  It is, very simply, a list of lists that you can edit on your phone, which is nice for jotting down ideas, plans, todo items, etc. when you're on the go. It syncs with your Dropbox account so you can back up your lists and see them on any computer with an internet connection... sort of. 
 
@@ -9,4 +6,4 @@ The only problem is that they are stored in xml, which isn't very pleasant to re
 
 That's where paperless-org comes in. It lets you load in the xml form of your lists from your local Dropbox folder into an org-mode buffer in emacs, and then save them back out again to xml again every time you save the buffer. The result is a fairly seamless way to keep your lists in sync between iPhone/iPad and computer. 
 
-As an aside, I also recommend turning the Paperless folder in your Dropbox into an hg repo, so you can get version control for your lists as well. This works well with the Paperless app, which simply ignores the .hg subdirectory.  I expect this works just fine with git as well. 
+As an aside, I also recommend turning the Paperless folder in your Dropbox into an hg repo, so you can get version control for your lists as well. This works well with the Paperless app, which simply ignores the .hg subdirectory.  I expect this works just fine with git as well.
