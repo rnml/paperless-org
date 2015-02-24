@@ -1,7 +1,7 @@
 Little utility for synchronizing one's
 [Paperless](http://crushapps.com/paperless/) lists on the iPhone/iPad
 with an [org-mode](http://orgmode.org) file via
-[Dropbox](https://www.dropbox.dom) and a local hg repo.
+[Dropbox](https://www.dropbox.com) and a local hg repo.
 
 Paperless is an elegant little app that helps me keep my life in
 order.  It is, very simply, a list of lists that you can edit on your
