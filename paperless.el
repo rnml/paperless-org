@@ -1,7 +1,7 @@
-(defvar paperless-file "/tmp/paperless.org"
+(defvar paperless-file (concat temporary-file-directory "paperless.org")
   "org file mirror of Paperless lists")
 
-(defvar paperless-repo "/home/nathanml/Dropbox/Paperless"
+(defvar paperless-repo (expand-file-name "~/Dropbox/Paperless")
   "dropbox folder for Paperless lists")
 
 (defun paperless-open ()
