@@ -24,9 +24,6 @@ end
 
 type t with sexp
 
-val create : List.t list -> t
-val iter : t -> f:(List.t -> unit) -> unit
-
 module type Format = sig
   val load : string -> t
   val save : t -> string -> unit
@@ -36,4 +33,3 @@ val normalize : t -> t
 
 module Xml : Format
 module Org : Format
-

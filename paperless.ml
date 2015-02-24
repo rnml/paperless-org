@@ -369,7 +369,7 @@ href=\"http://crushapps.com/paperless/xml_style/checklist.css\"?>"
 end
 
 module Index : sig
-  type t = string list
+  type t = string list with sexp
   val load : string -> t
   val save : t -> string -> unit
 end = struct
@@ -450,13 +450,15 @@ let add t plist =
 let create plists =
   let open Result.Monad_infix in
   let t = Hq.create () in
-  List.iter plists ~f:(fun plist -> add t plist);
+  List.iter plists ~f:(fun plist ->
+add t plist);
   t
 
 let xml_load dir =
   let index = Index.load (dir ^ "/index.plist") in
   List.map index ~f:(fun file ->
-    sprintf "%s/%s.xml" dir file |> Simple_xml.load |> Plist.of_xml)
+    let xml = sprintf "%s/%s.xml" dir file |> Simple_xml.load in
+    Plist.of_xml xml)
   |> create
 
 let index t = List.map ~f:Plist.name (Hq.to_list t)
@@ -476,11 +478,8 @@ let xml_save new_t dir =
   Set.iter (Set.diff old_keys new_keys) ~f:(fun name ->
     Unix.unlink (dir ^/ name ^ ".xml"))
 
-let iter = Hq.iter
-let fold = Hq.fold
-
-let sexp_of_t t = List.sexp_of_t Plist.sexp_of_t (Hq.to_list t)
-let t_of_sexp s = create (List.t_of_sexp Plist.t_of_sexp s)
+let sexp_of_t t = <:sexp_of< Plist.t list >> (Hq.to_list t)
+let t_of_sexp s = create (<:of_sexp< Plist.t list >> s)
 
 let org_conv_fail name org =
   Error.raise
